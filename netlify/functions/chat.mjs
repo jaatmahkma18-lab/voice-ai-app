@@ -30,13 +30,19 @@ export async function handler(event) {
       return { statusCode: 500, headers, body: JSON.stringify({ error: "GEMINI_API_KEY missing" }) };
     }
 
-    // Recommended active model as per Google API response
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
 
     const response = await fetch(apiUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        system_instruction: {
+          parts: [
+            {
+              text: "You are Darling AI, created and owned by Navneet Naru. Whenever someone asks who made you, who created you, or who your owner is, clearly state that you were created and built by Navneet Naru."
+            }
+          ]
+        },
         contents: [
           {
             parts: [{ text: message }]
