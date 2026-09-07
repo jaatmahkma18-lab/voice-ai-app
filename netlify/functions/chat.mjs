@@ -11,11 +11,13 @@ export default async (req, context) => {
   try {
     const { message } = await req.json();
     
-    if (!process.env.GEMINI_API_KEY) {
+  if (!process.env.GEMINI_API_KEY) {
+      
       throw new Error("GEMINI_API_KEY is not set in environment variables.");
     }
 
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    
     
     // सही मॉडल नाम का उपयोग यहाँ किया गया है
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
