@@ -1,5 +1,8 @@
 {
   "name": "voice-ai-netlify",
   "version": "1.0.0",
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "googleapis": "^144.0.0"
+  }
 }
