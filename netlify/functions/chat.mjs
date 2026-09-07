@@ -30,37 +30,28 @@ export async function handler(event) {
       return { statusCode: 500, headers, body: JSON.stringify({ error: "GEMINI_API_KEY missing" }) };
     }
 
-    // Top supported models sequence
-    const models = ["gemini-2.5-flash", "gemini-2.0-flash"];
-    let replyText = "";
-    let lastError = null;
+    // Recommended active model as per Google API response
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
 
-    for (const model of models) {
-      try {
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-        const response = await fetch(apiUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: message }] }]
-          })
-        });
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [{ text: message }]
+          }
+        ]
+      })
+    });
 
-        const data = await response.json();
-        if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
-          replyText = data.candidates[0].content.parts[0].text;
-          break; // Success! Exit loop
-        } else {
-          lastError = data.error?.message || "Model failed";
-        }
-      } catch (err) {
-        lastError = err.message;
-      }
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error?.message || "Google API Error");
     }
 
-    if (!replyText) {
-      throw new Error(lastError || "Failed to generate response from all models.");
-    }
+    const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response received.";
 
     return {
       statusCode: 200,
