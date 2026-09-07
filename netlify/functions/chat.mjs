@@ -29,8 +29,3 @@ export default async (req, context) => {
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
-};
-
-export const config = {
-  path: "/api/chat"
-};
