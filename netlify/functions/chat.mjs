@@ -1,17 +1,34 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function handler(event) {
-  // 1. Only POST requests are allowed
+  // CORS Headers
+  const headers = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Content-Type": "application/json"
+  };
+
+  // Handle preflight OPTIONS request
+  if (event.httpMethod === "OPTIONS") {
+    return {
+      statusCode: 200,
+      headers,
+      body: ""
+    };
+  }
+
+  // Allow only POST requests
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ error: "Method not allowed" }),
+      headers,
+      body: JSON.stringify({ error: "Method not allowed" })
     };
   }
 
   try {
-    // 2. Read request body safely
+    // Read request body safely
     let body = {};
     if (event.body) {
       try {
@@ -21,48 +38,72 @@ export async function handler(event) {
       }
     }
 
-    // Support both 'message' and 'prompt' keys from frontend
+    // Support prompt/message keys from frontend
     const message = String(body.message || body.prompt || "").trim();
 
     if (!message) {
       return {
         statusCode: 400,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "Message is required" }),
+        headers,
+        body: JSON.stringify({ error: "Message is required" })
       };
     }
 
-    // 3. Get Gemini API key
+    // Get API Key from Netlify Environment Variables
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
       return {
         statusCode: 500,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "GEMINI_API_KEY is not set in Netlify Environment Variables" }),
+        headers,
+        body: JSON.stringify({ error: "GEMINI_API_KEY is missing in Netlify Environment Variables" })
       };
     }
 
-    // 4. Initialize Google Gemini (Stable SDK)
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    // 5. Generate content
-    const result = await model.generateContent(message);
-    const responseText = result.response.text() || "Sorry, I could not generate a response.";
+    // List of model aliases to attempt sequentially
+    const modelCandidates = [
+      "gemini-2.0-flash",
+      "gemini-1.5-flash-latest",
+      "gemini-1.5-pro"
+    ];
+
+    let responseText = "";
+    let lastError = null;
+
+    for (const modelName of modelCandidates) {
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(message);
+        const res = await result.response;
+        responseText = res.text();
+        if (responseText) break; // Success, exit loop
+      } catch (err) {
+        lastError = err;
+        console.warn(`Failed with model ${modelName}:`, err.message);
+      }
+    }
+
+    if (!responseText) {
+      throw lastError || new Error("Failed to get response from Gemini API");
+    }
 
     return {
       statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reply: responseText }),
+      headers,
+      body: JSON.stringify({ reply: responseText })
     };
+
   } catch (error) {
-    console.error("Gemini Function Error:", error);
+    console.error("Gemini Handler Error:", error);
 
     return {
       statusCode: 500,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ error: error.message || "Internal Server Error" }),
+      headers,
+      body: JSON.stringify({
+        error: error.message || "An unexpected error occurred"
+      })
     };
   }
 }
