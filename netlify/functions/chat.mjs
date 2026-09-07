@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function handler(event) {
   // 1. Only POST requests are allowed
@@ -43,16 +43,13 @@ export async function handler(event) {
       };
     }
 
-    // 4. Initialize Google Gemini
-    const ai = new GoogleGenAI({ apiKey });
+    // 4. Initialize Google Gemini (Stable SDK)
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    // 5. Call valid stable Gemini model
-    const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
-      contents: message,
-    });
-
-    const responseText = response.text || "Sorry, I could not generate a response.";
+    // 5. Generate content
+    const result = await model.generateContent(message);
+    const responseText = result.response.text() || "Sorry, I could not generate a response.";
 
     return {
       statusCode: 200,
@@ -65,7 +62,7 @@ export async function handler(event) {
     return {
       statusCode: 500,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ error: error.message || "Something went wrong" }),
+      body: JSON.stringify({ error: error.message || "Internal Server Error" }),
     };
   }
 }
