@@ -1,13 +1,12 @@
 {
-  "name": "voice-ai-netlify",
+  "name": "voice-ai-app",
   "version": "1.0.0",
-  "type": "module",
+  "description": "Voice AI App",
+  "main": "index.html",
   "scripts": {
-    "start": "node index.js",
-    "build": "echo \"No build step required\""
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "@google/genai": "^1.31.0",
-    "googleapis": "^144.0.0"
+    "@google/generative-ai": "^0.21.0"
   }
 }
