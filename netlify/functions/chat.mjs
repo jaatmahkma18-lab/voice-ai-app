@@ -30,28 +30,37 @@ export async function handler(event) {
       return { statusCode: 500, headers, body: JSON.stringify({ error: "GEMINI_API_KEY missing" }) };
     }
 
-    // Official v1beta endpoint with supported model identifier
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+    // Top supported models sequence
+    const models = ["gemini-2.5-flash", "gemini-2.0-flash"];
+    let replyText = "";
+    let lastError = null;
 
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [{ text: message }]
-          }
-        ]
-      })
-    });
+    for (const model of models) {
+      try {
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: message }] }]
+          })
+        });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error?.message || "Google API Error");
+        const data = await response.json();
+        if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+          replyText = data.candidates[0].content.parts[0].text;
+          break; // Success! Exit loop
+        } else {
+          lastError = data.error?.message || "Model failed";
+        }
+      } catch (err) {
+        lastError = err.message;
+      }
     }
 
-    const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response received.";
+    if (!replyText) {
+      throw new Error(lastError || "Failed to generate response from all models.");
+    }
 
     return {
       statusCode: 200,
