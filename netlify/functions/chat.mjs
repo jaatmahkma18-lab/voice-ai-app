@@ -1,38 +1,39 @@
-import { GoogleGenerativeAI } from "@google/genai";
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-export default async (req, context) => {
-  if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-      headers: { "Content-Type": "application/json" },
-    });
+export async function handler(event) {
+  if (event.httpMethod !== 'POST') {
+    return {
+      statusCode: 450,
+      body: JSON.stringify({ error: 'Method not allowed' }),
+    };
   }
 
   try {
-    const { message } = await req.json();
-    
-  if (!process.env.GEMINI_API_KEY) {
-      
-      throw new Error("GEMINI_API_KEY is not set in environment variables.");
+    const { message } = JSON.parse(event.body || '{}');
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: 'GEMINI_API_KEY is not set in Netlify Environment Variables' }),
+      };
     }
 
-const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-    
-    
-    // सही मॉडल नाम का उपयोग यहाँ किया गया है
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-    const result = await model.generateContent(message);
+    const result = await model.generateContent(message || 'Hello');
     const responseText = result.response.text();
 
-    return new Response(JSON.stringify({ reply: responseText }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    return {
+      statusCode: 200,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reply: responseText }),
+    };
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: error.message }),
+    };
   }
-};
+}
