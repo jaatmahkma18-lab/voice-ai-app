@@ -30,8 +30,8 @@ export async function handler(event) {
       return { statusCode: 500, headers, body: JSON.stringify({ error: "GEMINI_API_KEY missing" }) };
     }
 
-    // Direct Google Gemini API endpoint call (v1 stable API)
-    const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    // Official v1beta endpoint with supported model identifier
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
 
     const response = await fetch(apiUrl, {
       method: "POST",
@@ -51,7 +51,7 @@ export async function handler(event) {
       throw new Error(data.error?.message || "Google API Error");
     }
 
-    const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response text found.";
+    const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response received.";
 
     return {
       statusCode: 200,
