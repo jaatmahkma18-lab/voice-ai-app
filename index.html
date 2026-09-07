@@ -42,7 +42,7 @@
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         const speech = new SpeechSynthesisUtterance(text);
-        speech.lang = 'hi-IN'; // हिंदी/इंग्लिश दोनों सपोर्ट करेगा
+        speech.lang = 'hi-IN';
         window.speechSynthesis.speak(speech);
       }
     }
