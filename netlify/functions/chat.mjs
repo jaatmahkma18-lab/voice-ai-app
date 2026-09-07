@@ -15,25 +15,38 @@ export async function handler(event) {
     if (!apiKey) {
       return {
         statusCode: 500,
-        body: JSON.stringify({ error: 'GEMINI_API_KEY is not set in Netlify Environment Variables' }),
+        body: JSON.stringify({
+          error: 'GEMINI_API_KEY is not set in Netlify Environment Variables'
+        }),
       };
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash'
+    });
 
     const result = await model.generateContent(message || 'Hello');
+
     const responseText = result.response.text();
 
     return {
       statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reply: responseText }),
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        reply: responseText
+      }),
     };
+
   } catch (error) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: error.message }),
+      body: JSON.stringify({
+        error: error.message
+      }),
     };
   }
 }
