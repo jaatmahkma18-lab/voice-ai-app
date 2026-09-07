@@ -7,7 +7,7 @@
     "build": "echo \"No build step required\""
   },
   "dependencies": {
-    "@google/genai": "^1.21.0",
+    "@google/generative-ai": "^0.21.0",
     "googleapis": "^144.0.0"
   }
 }
