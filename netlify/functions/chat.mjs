@@ -1,47 +1,36 @@
+import { GoogleGenerativeAI } from "@google/genai";
+
 export default async (req, context) => {
   if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed." }), { status: 405 });
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   try {
-    const body = await req.json();
-    const prompt = body.prompt;
-    const apiKey = process.env.GEMINI_API_KEY;
-
-    if (!apiKey) {
-      return new Response(JSON.stringify({ error: "API key is missing in Netlify settings." }), { status: 500 });
-    }
-
-    if (!prompt) {
-      return new Response(JSON.stringify({ error: "No prompt provided." }), { status: 400 });
-    }
-
-    const apiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }]
-        })
-      }
-    );
-
-    const data = await apiResponse.json();
+    const { message } = await req.json();
     
-    let reply = "No response from AI.";
-    if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
-      reply = data.candidates[0].content.parts[0].text;
-    } else if (data.error) {
-      reply = "API Error: " + data.error.message;
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY is not set in environment variables.");
     }
 
-    return new Response(JSON.stringify({ reply }), {
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    
+    // सही मॉडल नाम का उपयोग यहाँ किया गया है
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    const result = await model.generateContent(message);
+    const responseText = result.response.text();
+
+    return new Response(JSON.stringify({ reply: responseText }), {
       status: 200,
-      headers: { "Content-Type": "application/json" }
+      headers: { "Content-Type": "application/json" },
     });
-    
   } catch (error) {
-    return new Response(JSON.stringify({ error: "Server Error: " + error.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 };
