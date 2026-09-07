@@ -1,8 +1,10 @@
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Voice AI Assistant</title>
+  <title>Darling AI Assistant</title>
   <style>
     body { font-family: Arial, sans-serif; background: #121212; color: #fff; max-width: 500px; margin: 50px auto; padding: 20px; }
     #chat { height: 350px; border: 1px solid #333; overflow-y: auto; padding: 10px; background: #1e1e1e; border-radius: 8px; margin-bottom: 15px; }
@@ -16,7 +18,7 @@
   </style>
 </head>
 <body>
-  <h2>AI Voice Chat</h2>
+  <h2>Darling AI Chat</h2>
   <div id="chat"></div>
   <div class="inputs">
     <input type="text" id="userInput" placeholder="Type or click Speak..." onkeydown="if(event.key === 'Enter') sendMsg();" />
@@ -40,6 +42,7 @@
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         const speech = new SpeechSynthesisUtterance(text);
+        speech.lang = 'hi-IN'; // हिंदी/इंग्लिश दोनों सपोर्ट करेगा
         window.speechSynthesis.speak(speech);
       }
     }
@@ -51,7 +54,6 @@
       addMessage('user', text);
       userInput.value = '';
 
-      // अस्थायी लोडिंग मैसेज
       const loadingId = 'loading_' + Date.now();
       const loadingMsg = document.createElement('div');
       loadingMsg.className = 'msg bot';
@@ -75,24 +77,26 @@
         speakText(reply);
       } catch (err) {
         document.getElementById(loadingId).remove();
-        addMessage('bot', 'Network or connection error.');
+        addMessage('bot', 'Network Error. Please try again.');
       }
     }
 
     function startListening() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
-        alert('Voice input is not supported in this browser. Please use Chrome.');
+        alert('Voice input is not supported in this browser. Please use Google Chrome.');
         return;
       }
       const recognition = new SpeechRecognition();
-      recognition.lang = 'hi-IN'; // हिंदी और इंग्लिश दोनों के लिए
+      recognition.lang = 'en-IN'; 
       recognition.onresult = (event) => {
         userInput.value = event.results[0][0].transcript;
         sendMsg();
       };
       recognition.onerror = (event) => {
-        alert('Mic error: ' + event.error);
+        if(event.error !== 'aborted') {
+            console.error('Mic error:', event.error);
+        }
       };
       recognition.start();
     }
